@@ -1,0 +1,246 @@
+Module: D:\SUMN.C
+GROUP: 'DGROUP' CONST,CONST2,_DATA
+
+Segment: _TEXT BYTE USE16 0000009C bytes
+
+#include<stdio.h>
+
+int main()
+0000                          main_:
+0000    B8 1A 00                  mov         ax,0x001a 
+0003    E8 00 00                  call        __STK 
+0006    53                        push        bx 
+0007    51                        push        cx 
+0008    52                        push        dx 
+0009    56                        push        si 
+000A    57                        push        di 
+000B    55                        push        bp 
+000C    89 E5                     mov         bp,sp 
+000E    81 EC 08 00               sub         sp,0x0008 
+
+{
+    int n;
+    int i;
+    int sum=0;
+0012                          L$1:
+0012    C7 46 FE 00 00            mov         word ptr -0x2[bp],0x0000 
+
+    printf("Please input N (1-100): ");
+0017    B8 00 00                  mov         ax,offset DGROUP:L$14 
+001A    50                        push        ax 
+001B    E8 00 00                  call        printf_ 
+001E    83 C4 02                  add         sp,0x0002 
+
+
+    while(1){
+        if(scanf("%d",&n)!=1){
+0021                          L$2:
+0021    8D 46 FA                  lea         ax,-0x6[bp] 
+0024    50                        push        ax 
+0025    B8 19 00                  mov         ax,offset DGROUP:L$15 
+0028    50                        push        ax 
+0029    E8 00 00                  call        scanf_ 
+002C    83 C4 04                  add         sp,0x0004 
+002F    3D 01 00                  cmp         ax,0x0001 
+0032    74 11                     je          L$4 
+
+            printf("Invalid input!\n");
+0034                          L$3:
+0034    B8 1C 00                  mov         ax,offset DGROUP:L$16 
+0037    50                        push        ax 
+0038    E8 00 00                  call        printf_ 
+003B    83 C4 02                  add         sp,0x0002 
+
+            return 1;
+003E    C7 46 F8 01 00            mov         word ptr -0x8[bp],0x0001 
+0043    EB 4B                     jmp         L$11 
+
+        }
+
+        if(n<1||n>100){
+0045                          L$4:
+0045    83 7E FA 01               cmp         word ptr -0x6[bp],0x0001 
+0049    7C 06                     jl          L$5 
+004B    83 7E FA 64               cmp         word ptr -0x6[bp],0x0064 
+004F    7E 11                     jle         L$6 
+
+            printf("Please enter a number from 1 to 100!\n");
+0051                          L$5:
+0051    B8 2C 00                  mov         ax,offset DGROUP:L$17 
+0054    50                        push        ax 
+0055    E8 00 00                  call        printf_ 
+0058    83 C4 02                  add         sp,0x0002 
+
+            return 1;
+005B    C7 46 F8 01 00            mov         word ptr -0x8[bp],0x0001 
+0060    EB 2E                     jmp         L$11 
+
+        }
+        break;
+    }
+
+    for(i=1;i<=n;i++){
+0062                          L$6:
+0062    C7 46 FC 01 00            mov         word ptr -0x4[bp],0x0001 
+0067                          L$7:
+0067    8B 46 FC                  mov         ax,word ptr -0x4[bp] 
+006A    3B 46 FA                  cmp         ax,word ptr -0x6[bp] 
+006D    7F 0E                     jg          L$10 
+
+        sum+=i;
+006F                          L$8:
+006F    8B 46 FC                  mov         ax,word ptr -0x4[bp] 
+0072    01 46 FE                  add         word ptr -0x2[bp],ax 
+
+    }
+0075                          L$9:
+0075    8B 46 FC                  mov         ax,word ptr -0x4[bp] 
+0078    FF 46 FC                  inc         word ptr -0x4[bp] 
+007B    EB EA                     jmp         L$7 
+
+
+    printf("%d\n",sum);
+007D                          L$10:
+007D    8B 46 FE                  mov         ax,word ptr -0x2[bp] 
+0080    50                        push        ax 
+0081    B8 52 00                  mov         ax,offset DGROUP:L$18 
+0084    50                        push        ax 
+0085    E8 00 00                  call        printf_ 
+0088    83 C4 04                  add         sp,0x0004 
+
+    return 0;
+008B    C7 46 F8 00 00            mov         word ptr -0x8[bp],0x0000 
+
+}
+0090                          L$11:
+0090    8B 46 F8                  mov         ax,word ptr -0x8[bp] 
+0093                          L$12:
+0093    89 EC                     mov         sp,bp 
+0095    5D                        pop         bp 
+0096    5F                        pop         di 
+0097    5E                        pop         si 
+0098    5A                        pop         dx 
+0099    59                        pop         cx 
+009A    5B                        pop         bx 
+009B    C3                        ret         
+009C                          L$13:
+
+Routine Size: 156 bytes,    Routine Base: _TEXT + 0000
+
+No disassembly errors
+
+Segment: CONST WORD USE16 00000056 bytes
+0000                          L$14:
+0000    50 6C 65 61 73 65 20 69 6E 70 75 74 20 4E 20 28 Please input N (
+0010    31 2D 31 30 30 29 3A 20 00                      1-100): .
+0019                          L$15:
+0019    25 64 00                                        %d.
+001C                          L$16:
+001C    49 6E 76 61 6C 69 64 20 69 6E 70 75 74 21 0A 00 Invalid input!..
+002C                          L$17:
+002C    50 6C 65 61 73 65 20 65 6E 74 65 72 20 61 20 6E Please enter a n
+003C    75 6D 62 65 72 20 66 72 6F 6D 20 31 20 74 6F 20 umber from 1 to 
+004C    31 30 30 21 0A 00                               100!..
+0052                          L$18:
+0052    25 64 0A 00                                     %d..
+
+Segment: CONST2 WORD USE16 00000000 bytes
+
+Segment: _DATA WORD USE16 00000000 bytes
+
+Segment: .debug_info BYTE USE32 0000016F bytes
+0000                          L$19:
+0000    6B 01 00 00 02 00                               k.....
+0006    00 00 00 00                                     DD	offset L$21
+000A    02 06 6E 01 00 00 44 3A 5C 53 55 4D 4E 2E 43 00 ..n...D:\SUMN.C.
+001A    00 00 00 00                                     DD	offset L$20
+001E    01 00 56 31 2E 30 20 57 41 54 43 4F 4D 00 00    ..V1.0 WATCOM..
+002D    00 00 00 00                                     DD	offset L$22
+0031    00 00 00 00 02                                  .....
+0036    04 00 00 00                                     DD	offset L$23
+003A    09 63 68 61 72 00 08 01 09 73 69 67 6E 65 64 20 .char....signed 
+004A    63 68 61 72 00 06 01 09 75 6E 73 69 67 6E 65 64 char....unsigned
+005A    20 63 68 61 72 00 08 01 09 73 68 6F 72 74 00 05  char....short..
+006A    02 09 75 6E 73 69 67 6E 65 64 20 73 68 6F 72 74 ..unsigned short
+007A    00 07 02 09 69 6E 74 00 05 02 09 75 6E 73 69 67 ....int....unsig
+008A    6E 65 64 20 69 6E 74 00 07 02 09 6C 6F 6E 67 00 ned int....long.
+009A    05 04 09 75 6E 73 69 67 6E 65 64 20 6C 6F 6E 67 ...unsigned long
+00AA    00 07 04 09 5F 5F 69 6E 74 36 34 00 05 08 09 75 ....__int64....u
+00BA    6E 73 69 67 6E 65 64 20 5F 5F 69 6E 74 36 34 00 nsigned __int64.
+00CA    07 08 09 5F 42 6F 6F 6C 00 07 01 88 01 6D 01 00 ..._Bool.....m..
+00DA    00 01 7D 00 00 00 12 03 0A                      ..}......
+00E3    00 00                                           DW	seg main_
+00E5    6D 61 69 6E 00 01 00 01 01 00 00 02 91 0C       main..........
+00F3    00 00                                           DW	offset main_
+00F5    9C 00                                           DW	offset L$13
+00F7    00 02 90 21 D2 01 01 00 01 2E 72 65 74 75 72 6E ...!......return
+0107    00 01 6B 7D 00 00 00 66 6C 01 00 00             ..k}...fl...
+0113    12 00                                           DW	offset L$1
+0115    93 00                                           DW	offset L$12
+0117    D2 01 01 00 00 6E 00 02 91 7A 7D 00 00 00 D2 01 .....n...z}.....
+0127    01 00 00 69 00 02 91 7C 7D 00 00 00 D2 01 01 00 ...i...|}.......
+0137    00 73 75 6D 00 02 91 7E 7D 00 00 00 66 61 01 00 .sum...~}...fa..
+0147    00                                              .
+0148    21 00                                           DW	offset L$2
+014A    62 00                                           DW	offset L$6
+014C    66 56 01 00 00                                  fV...
+0151    34 00                                           DW	offset L$3
+0153    45 00                                           DW	offset L$4
+0155    00 66 60 01 00 00                               .f`...
+015B    51 00                                           DW	offset L$5
+015D    62 00                                           DW	offset L$6
+015F    00 00 66 6B 01 00 00                            ..fk...
+0166    6F 00                                           DW	offset L$8
+0168    75 00                                           DW	offset L$9
+016A    00 00 00 00 00                                  .....
+
+Segment: .debug_pubnames BYTE USE32 0000001B bytes
+0000    17 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$19
+000A    9C 00 00 00 D5 00 00 00 6D 61 69 6E 00 00 00 00 ........main....
+001A    00                                              .
+
+Segment: .debug_aranges BYTE USE32 0000001E bytes
+0000    1A 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$19
+000A    02 02                                           ..
+000C    00 00                                           DW	offset main_
+000E    00 00                                           DW	seg main_
+0010    9C 00                                           ..
+0012    00 00                                           DW	offset DGROUP:L$14
+0014    00 00                                           DW	seg DGROUP:L$14
+0016    56 00 00 00 00 00 00 00                         V.......
+
+Segment: .debug_line BYTE USE32 00000051 bytes
+0000                          L$20:
+0000    4D 00 00 00 02 00 10 00 00 00 01 00 FF 04 0A 00 M...............
+0010    01 01 01 01 00 00 00 00 00 00 00 0E 03 44 3A 5C .............D:\
+0020    53 55 4D 4E 2E 43 00 00 00 00 00 03 02          SUMN.C.......
+002D    00 00                                           DW	offset main_
+002F    00 03 04                                        ...
+0032    00 00                                           DW	seg main_
+0034    06 05 01 0D 03 04 53 20 03 03 33 58 34 03 03 27 ......S ..3X4..'
+0044    3C 34 03 05 27 40 24 2D 44 20 00 01 01          <4..'@$-D ...
+
+Segment: .debug_loc BYTE USE32 00000000 bytes
+
+Segment: .debug_abbrev BYTE USE32 0000006E bytes
+0000                          L$21:
+0000    06 11 01 01 13 03 08 10 06 13 0F 1B 08 25 08 42 .............%.B
+0010    0F 43 06 35 10 82 41 0B 83 41 06 00 00 09 24 00 .C.5..A..A....$.
+0020    03 08 3E 0B 0B 0B 00 00 88 01 2E 01 01 13 32 0B ..>...........2.
+0030    49 13 2C 0F 46 0A 03 08 3F 0C 20 0B 36 0B 27 0C I.,.F...?. .6.'.
+0040    4C 0B 34 0C 2A 0A 11 01 12 01 33 0B 40 0A 00 00 L.4.*.....3.@...
+0050    D2 01 34 00 32 0B 3F 0C 34 0C 03 08 02 0A 49 13 ..4.2.?.4.....I.
+0060    00 00 66 0B 01 01 13 11 01 12 01 00 00 00       ..f...........
+
+Segment: .debug_macinfo BYTE USE32 00000001 bytes
+0000                          L$22:
+0000    00                                              .
+
+Segment: .debug_str BYTE USE32 00000000 bytes
+
+Segment: .WATCOM_references BYTE USE32 00000004 bytes
+0000    00 00 00 00                                     ....
+0004                          L$23:
+

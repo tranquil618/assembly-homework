@@ -1,0 +1,109 @@
+Microsoft (R) Macro Assembler Version 5.00                  10/16/26 18:34:48
+                                                             Page     1-1
+
+
+				; ×÷Òµ£ºÊä³ö ASCII Ð¡Ð´×ÖÄ¸£¬Ã¿ÐÐ 13 ¸ö×ÖÄ¸£¬¹²
+				Á½ÐÐ 
+				; Æ½Ì¨£º8086 / 16 Î» DOS / MASM 5.0 
+				.MODEL SMALL             ; Ð¡ÄÚ´æÄ£ÐÍ£º´úÂë¶ÎºÍ
+				Êý¾Ý¶Î¸÷²»³¬¹ý 64KB 
+ 0100				.STACK 100H              ; ·ÖÅä 256 ×Ö½ÚÕ»¿Õ¼ä£
+				¬¹©±£´æ¼ÆÊýÆ÷¼°ÖÐ¶ÏÊ¹ÓÃ 
+ 0000				.DATA                    ; Êý¾Ý¶Î£»±¾³ÌÐòÖ±½ÓÓÃ
+				¼Ä´æÆ÷±£´æ×ÖÄ¸£¬ÎÞÐë¶¨Òå±äÁ¿ 
+ 0000				.CODE                    ; ´úÂë¶Î¿ªÊ¼ 
+ 0000				START: 
+ 0000  B8 ---- R		    MOV AX, @DATA        ; ÏÈ°ÑÊý¾Ý¶ÎµØÖ·ËÍÈë A
+				X 
+ 0003  8E D8			    MOV DS, AX           ; ÔÙ³õÊ¼»¯ DS£¬²»ÄÜÖ±½
+				Ó°ÑÁ¢¼´ÊýËÍÈë¶Î¼Ä´æÆ÷ 
+ 0005  B3 61			    MOV BL, 'a'          ; BL ±£´æµ±Ç°×ÖÄ¸£¬´Ó 
+				a ¿ªÊ¼£»²»ÊÜÊä³ö·µ»ØÖµ AL Ó°Ïì 
+ 0007  B9 0002			    MOV CX, 2            ; Íâ²ã¼ÆÊýÆ÷£º×Ü¹²Êä³ö
+				Á½ÐÐ 
+ 000A				ROW_NEXT: 
+ 000A  51			    PUSH CX              ; °ÑÍâ²ã CX Ñ¹Õ»£¬±ÜÃâ
+				±»ÄÚ²ãÑ­»·¸²¸Ç 
+ 000B  B9 000D			    MOV CX, 13           ; ÄÚ²ã¼ÆÊýÆ÷£º±¾ÐÐÊä³ö
+				 13 ¸ö×ÖÄ¸ 
+ 000E				CHAR_NEXT: 
+ 000E  8A D3			    MOV DL, BL           ; °Ñµ±Ç°×ÖÄ¸ËÍÈë DOS Ê
+				ä³ö¹¦ÄÜµÄ²ÎÊý¼Ä´æÆ÷ DL 
+ 0010  B4 02			    MOV AH, 02H          ; AH=02H£ºÑ¡Ôñ DOS µ¥×
+				Ö·ûÊä³ö¹¦ÄÜ 
+ 0012  CD 21			    INT 21H              ; µ÷ÓÃ DOS£¬Êä³ö DL ÖÐ
+				µÄ×Ö·û 
+ 0014  FE C3			    INC BL               ; µ±Ç°×ÖÄ¸¼ÓÒ»£¬ÒÀ´Î´Ó
+				 a µÝÔö 
+ 0016  83 F9 01			    CMP CX, 1            ; ÅÐ¶ÏÊÇ·ñÒÑ¾­µ½±¾ÐÐ×î
+				ºóÒ»¸ö×ÖÄ¸ 
+ 0019  74 06			    JE CHAR_DONE         ; CX=1 Ê±Ìø¹ý¿Õ¸ñ£¬±ÜÃ
+				âÐÐÎ²³öÏÖ¶àÓà¿Õ¸ñ 
+ 001B  B2 20			    MOV DL, ' '          ; ÆäÓà×ÖÄ¸ºóÊä³öÒ»¸ö¿Õ
+				¸ñ£¬·Ö¸ôÏàÁÚ×ÖÄ¸ 
+ 001D  B4 02			    MOV AH, 02H          ; ÔÙ´ÎÑ¡Ôñµ¥×Ö·ûÊä³ö¹¦
+				ÄÜ 
+ 001F  CD 21			    INT 21H              ; Êä³ö¿Õ¸ñ 
+ 0021				CHAR_DONE: 
+ 0021  E2 EB			    LOOP CHAR_NEXT       ; CX ÏÈ¼õÒ»£»Èô·ÇÁã£¬¼
+				ÌÐøÊä³ö±¾ÐÐµÄÏÂÒ»¸ö×ÖÄ¸ 
+ 0023  B2 0D			    MOV DL, 0DH          ; 0DH ÊÇ»Ø³µ£º¹â±ê»Øµ½
+				µ±Ç°ÐÐÐÐÊ× 
+ 0025  B4 02			    MOV AH, 02H 
+ 0027  CD 21			    INT 21H              ; Êä³ö»Ø³µ 
+ 0029  B2 0A			    MOV DL, 0AH          ; 0AH ÊÇ»»ÐÐ£º¹â±êÒÆµ½
+				ÏÂÒ»ÐÐ 
+ 002B  B4 02			    MOV AH, 02H 
+ 002D  CD 21			    INT 21H              ; Êä³ö»»ÐÐ£»DOS »»ÐÐÊ¹
+				ÓÃ»Ø³µ¡¢»»ÐÐÁ½¸ö×Ö·û 
+Microsoft (R) Macro Assembler Version 5.00                  10/16/26 18:34:48
+                                                             Page     1-2
+
+
+ 002F  59			    POP CX               ; ±¾ÐÐ½áÊø£¬´ÓÕ»ÖÐ»Ö¸´
+				Íâ²ãÑ­»·µÄ¼ÆÊýÆ÷ 
+ 0030  E2 D8			    LOOP ROW_NEXT        ; Íâ²ã CX ¼õÒ»£»·ÇÁãÔò
+				Êä³öÏÂÒ»ÐÐ£¬ÎªÁãÔò½áÊø 
+ 0032  B8 4C00			    MOV AX, 4C00H        ; AH=4CH£ºÍË³ö³ÌÐò£»AL
+				=00H£º·µ»ØÂëÎª 0 
+ 0035  CD 21			    INT 21H              ; ·µ»Ø DOS ÃüÁîÐÐ 
+ 0037				END START                ; »ã±àÔ´Âë½áÊø£¬Ö¸¶¨³Ì
+				ÐòÈë¿ÚÎª START 
+Microsoft (R) Macro Assembler Version 5.00                  10/16/26 18:34:48
+                                                             Symbols-1
+
+
+Segments and Groups:
+
+                N a m e         	Length	 Align	Combine Class
+
+DGROUP . . . . . . . . . . . . .  	GROUP
+  _DATA  . . . . . . . . . . . .  	0000	WORD	PUBLIC	'DATA'
+  STACK  . . . . . . . . . . . .  	0100	PARA	STACK	'STACK'
+_TEXT  . . . . . . . . . . . . .  	0037	WORD	PUBLIC	'CODE'
+
+Symbols:            
+
+                N a m e         	Type	 Value	 Attr
+
+CHAR_DONE  . . . . . . . . . . .  	L NEAR	0021	_TEXT
+CHAR_NEXT  . . . . . . . . . . .  	L NEAR	000E	_TEXT
+
+ROW_NEXT . . . . . . . . . . . .  	L NEAR	000A	_TEXT
+
+START  . . . . . . . . . . . . .  	L NEAR	0000	_TEXT
+
+@CODE  . . . . . . . . . . . . .  	TEXT  _TEXT		
+@CODESIZE  . . . . . . . . . . .  	TEXT  0		
+@DATASIZE  . . . . . . . . . . .  	TEXT  0		
+@FILENAME  . . . . . . . . . . .  	TEXT  LOOP		
+
+
+     37 Source  Lines
+     37 Total   Lines
+     18 Symbols
+
+  51130 + 465366 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

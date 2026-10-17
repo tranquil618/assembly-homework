@@ -1,0 +1,30 @@
+# macOS、编辑器临时文件
+.DS_Store
+._*
+*~
+*.swp
+*.swo
+*.bak
+*.BAK
+
+# 汇编/C 编译与链接产物（兼容 DOS 大写文件名）
+*.[oO][bB][jJ]
+*.o
+*.[eE][xX][eE]
+*.[cC][oO][mM]
+*.[mM][aA][pP]
+*.[cC][rR][fF]
+*.[pP][cC][hH]
+*.dSYM/
+__wcl__.lnk
+__WCL__.LNK
+
+# 本机测试可执行文件
+*_mac
+*_MAC
+
+# 运行输出及日志；保留输入样例、验证脚本和人工记录
+*.[lL][oO][gG]
+*.[oO][uU][tT]
+
+# .DIS、.LST、.REF、中文注释、源码、题面、配置不忽略：它们可能是作业交付材料。

@@ -1,0 +1,59 @@
+
+作业/作业1/CHECK/ASCII_MAC:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100000410 <_main>:
+100000410:     	sub	sp, sp, #0x20
+100000414:     	stp	x29, x30, [sp, #0x10]
+100000418:     	add	x29, sp, #0x10
+10000041c:     	stur	wzr, [x29, #-0x4]
+100000420:     	mov	w8, #0x61               ; =97
+100000424:     	str	w8, [sp]
+100000428:     	str	wzr, [sp, #0x8]
+10000042c:     	b	0x100000430 <_main+0x20>
+100000430:     	ldr	w8, [sp, #0x8]
+100000434:     	subs	w8, w8, #0x2
+100000438:     	b.ge	0x1000004b8 <_main+0xa8>
+10000043c:     	b	0x100000440 <_main+0x30>
+100000440:     	str	wzr, [sp, #0x4]
+100000444:     	b	0x100000448 <_main+0x38>
+100000448:     	ldr	w8, [sp, #0x4]
+10000044c:     	subs	w8, w8, #0xd
+100000450:     	b.ge	0x10000049c <_main+0x8c>
+100000454:     	b	0x100000458 <_main+0x48>
+100000458:     	ldr	w0, [sp]
+10000045c:     	bl	0x1000004c8 <_putchar+0x1000004c8>
+100000460:     	ldr	w8, [sp]
+100000464:     	add	w8, w8, #0x1
+100000468:     	str	w8, [sp]
+10000046c:     	ldr	w8, [sp, #0x4]
+100000470:     	subs	w8, w8, #0xc
+100000474:     	b.ge	0x100000488 <_main+0x78>
+100000478:     	b	0x10000047c <_main+0x6c>
+10000047c:     	mov	w0, #0x20               ; =32
+100000480:     	bl	0x1000004c8 <_putchar+0x1000004c8>
+100000484:     	b	0x100000488 <_main+0x78>
+100000488:     	b	0x10000048c <_main+0x7c>
+10000048c:     	ldr	w8, [sp, #0x4]
+100000490:     	add	w8, w8, #0x1
+100000494:     	str	w8, [sp, #0x4]
+100000498:     	b	0x100000448 <_main+0x38>
+10000049c:     	mov	w0, #0xa                ; =10
+1000004a0:     	bl	0x1000004c8 <_putchar+0x1000004c8>
+1000004a4:     	b	0x1000004a8 <_main+0x98>
+1000004a8:     	ldr	w8, [sp, #0x8]
+1000004ac:     	add	w8, w8, #0x1
+1000004b0:     	str	w8, [sp, #0x8]
+1000004b4:     	b	0x100000430 <_main+0x20>
+1000004b8:     	mov	w0, #0x0                ; =0
+1000004bc:     	ldp	x29, x30, [sp, #0x10]
+1000004c0:     	add	sp, sp, #0x20
+1000004c4:     	ret
+
+Disassembly of section __TEXT,__stubs:
+
+00000001000004c8 <__stubs>:
+1000004c8:     	adrp	x16, 0x100004000 <_putchar+0x100004000>
+1000004cc:     	ldr	x16, [x16]
+1000004d0:     	br	x16

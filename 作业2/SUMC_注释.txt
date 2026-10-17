@@ -1,0 +1,191 @@
+; 中文学习注释版；UTF-8 编码。原始 .DIS 文件保持不变。
+; 这是对真实 DOS 16 位 OBJ 目标文件的反汇编；地址为各段内偏移，不是完整 EXE 的运行地址。
+; 例如 call 后的 E8 00 00 可能是等待链接器修正的字段，不能据此认定程序调用了下一条指令。
+; 左侧依次是偏移、机器码，右侧是指令；先重点看指令及中文注释。
+; 0x64 等于 64H，即十进制 100；word ptr 表示操作 16 位内存数据。
+; -0x2[bp] 等同于 [BP-2]。使用 BP 的普通内存寻址默认使用 SS 栈段。
+; 本次编译中 int 为 2 字节；下面的布局只对应这次编译，不是所有 C 程序的固定规则。
+; 局部变量：sum=[BP-2]，i=[BP-4]，返回值暂存区=[BP-6]。
+
+Module: D:\SUM.C
+GROUP: 'DGROUP' CONST,CONST2,_DATA
+
+Segment: _TEXT BYTE USE16 0000004F bytes
+
+#include<stdio.h>
+
+int main()
+0000                          main_:
+
+; 一、main 的准备工作：检查栈、保存寄存器、分配局部变量空间。
+0000    B8 18 00                  mov         ax,0x0018    ; 为后面的运行库栈检查准备所需空间量；这不是求和初始值。
+0003    E8 00 00                  call        __STK    ; 调用运行库的栈空间检查函数 __STK，属于编译器生成的准备工作。
+0006    53                        push        bx    ; 保存 BX 原来的值，函数结束时会恢复。
+0007    51                        push        cx    ; 保存 CX 原来的值。
+0008    52                        push        dx    ; 保存 DX 原来的值。
+0009    56                        push        si    ; 保存 SI 原来的值。
+000A    57                        push        di    ; 保存 DI 原来的值。
+000B    55                        push        bp    ; 保存调用者的 BP，避免破坏调用者定位变量的参照。
+000C    89 E5                     mov         bp,sp    ; BP = SP，建立固定的栈帧参照；后面用 [BP-偏移] 找局部变量。
+000E    81 EC 06 00               sub         sp,0x0006    ; SP 减 6，在栈上为 sum、i 和返回值暂存区分配共 6 字节。
+
+{
+    int i;
+    int sum=0;
+0012                          L$1:
+
+; 二、初始化 sum；之后初始化 i，进入 for 循环。
+0012    C7 46 FE 00 00            mov         word ptr -0x2[bp],0x0000    ; sum = 0；往 [BP-2] 写入一个 16 位的零。
+
+
+    for(i=1;i<=100;i++){
+0017    C7 46 FC 01 00            mov         word ptr -0x4[bp],0x0001    ; i = 1；循环变量 i 保存在 [BP-4]。
+001C                          L$2:
+001C    83 7E FC 64               cmp         word ptr -0x4[bp],0x0064    ; 比较 i 和十进制 100（0x64），不修改 i，只设置条件标志。
+0020    7F 0E                     jg          L$5    ; 若 i > 100，跳到 L$5（0030），结束循环并准备输出。JG 用于有符号比较。
+
+        sum+=i;
+0022                          L$3:
+0022    8B 46 FC                  mov         ax,word ptr -0x4[bp]    ; AX = i；先从内存取出当前要累加的数。
+0025    01 46 FE                  add         word ptr -0x2[bp],ax    ; sum += AX，也就是 sum += i；结果仍写回 [BP-2]。
+
+    }
+0028                          L$4:
+0028    8B 46 FC                  mov         ax,word ptr -0x4[bp]    ; 读取 i 到 AX，是未优化的 i++ 代码的一部分；此处 AX 中的旧值后续未使用。
+002B    FF 46 FC                  inc         word ptr -0x4[bp]    ; 把内存中的 i 加 1。
+002E    EB EC                     jmp         L$2    ; 无条件跳回 L$2（001C），重新判断 i 是否仍不超过 100。
+
+
+    printf("%d\n",sum);
+0030                          L$5:
+
+; 三、把 sum 和格式字符串传给 printf。
+0030    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; AX = sum；循环结束时 sum 为 5050，准备作为 printf 的参数。
+0033    50                        push        ax    ; 先把第二个参数 sum 压栈，供 printf 读取。
+0034    B8 00 00                  mov         ax,offset DGROUP:L$8    ; AX = 格式字符串 "%d\n" 的偏移地址；L$8 在后面的 CONST 段中。
+0037    50                        push        ax    ; 再把第一个参数（格式字符串地址）压栈；本次参数按从右到左的顺序压栈。
+0038    E8 00 00                  call        printf_    ; 调用 C 标准库 printf；库函数负责十进制格式化与输出，不是直接调用 INT 21H/02H。
+003B    83 C4 04                  add         sp,0x0004    ; 两个参数各占 2 字节，调用后 SP 加 4，释放参数空间；不是让计算结果加 4。
+
+    return 0;
+
+; 四、准备返回值，并恢复栈和寄存器。
+003E    C7 46 FA 00 00            mov         word ptr -0x6[bp],0x0000    ; 为 return 0 准备返回值：把 0 写入 [BP-6]。
+
+}
+0043    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; 从 [BP-6] 取出返回值放入 AX；本次 main 的整数返回值通过 AX 传回。
+0046                          L$6:
+0046    89 EC                     mov         sp,bp    ; SP = BP，释放前面为局部变量预留的 6 字节空间。
+0048    5D                        pop         bp    ; 恢复调用者的 BP，之后依次按保存的相反顺序恢复寄存器。
+0049    5F                        pop         di    ; 恢复 DI。
+004A    5E                        pop         si    ; 恢复 SI。
+004B    5A                        pop         dx    ; 恢复 DX。
+004C    59                        pop         cx    ; 恢复 CX。
+004D    5B                        pop         bx    ; 恢复 BX。
+004E    C3                        ret    ; 从栈中取回返回地址，返回 C 运行库；随后由运行库结束 DOS 程序。
+004F                          L$7:
+
+Routine Size: 79 bytes,    Routine Base: _TEXT + 0000
+
+No disassembly errors
+
+
+; 以下是字符串常量，不是要执行的指令。C 字符串以 00 结尾，不是 DOS 09H 的 $。
+; 0A 是换行符；右侧的点号是不可打印字节的显示占位。
+Segment: CONST WORD USE16 00000004 bytes
+0000                          L$8:
+0000    25 64 0A 00                                     %d..
+
+Segment: CONST2 WORD USE16 00000000 bytes
+
+Segment: _DATA WORD USE16 00000000 bytes
+
+
+; 以下 .debug_* 段保存类型、行号等调试资料，不是程序的执行流程。
+; 元数据段上的 USE32 不代表主程序是 32 位；前面的 _TEXT USE16 才是本次代码段。
+; 初次阅读可以到这里停止。其后的原始内容仍予保留，便于核对。
+Segment: .debug_info BYTE USE32 00000142 bytes
+0000                          L$9:
+0000    3E 01 00 00 02 00                               >.....
+0006    00 00 00 00                                     DD	offset L$11
+000A    02 06 41 01 00 00 44 3A 5C 53 55 4D 2E 43 00    ..A...D:\SUM.C.
+0019    00 00 00 00                                     DD	offset L$10
+001D    01 00 56 31 2E 30 20 57 41 54 43 4F 4D 00 00    ..V1.0 WATCOM..
+002C    00 00 00 00                                     DD	offset L$12
+0030    00 00 00 00 02                                  .....
+0035    04 00 00 00                                     DD	offset L$13
+0039    09 63 68 61 72 00 08 01 09 73 69 67 6E 65 64 20 .char....signed 
+0049    63 68 61 72 00 06 01 09 75 6E 73 69 67 6E 65 64 char....unsigned
+0059    20 63 68 61 72 00 08 01 09 73 68 6F 72 74 00 05  char....short..
+0069    02 09 75 6E 73 69 67 6E 65 64 20 73 68 6F 72 74 ..unsigned short
+0079    00 07 02 09 69 6E 74 00 05 02 09 75 6E 73 69 67 ....int....unsig
+0089    6E 65 64 20 69 6E 74 00 07 02 09 6C 6F 6E 67 00 ned int....long.
+0099    05 04 09 75 6E 73 69 67 6E 65 64 20 6C 6F 6E 67 ...unsigned long
+00A9    00 07 04 09 5F 5F 69 6E 74 36 34 00 05 08 09 75 ....__int64....u
+00B9    6E 73 69 67 6E 65 64 20 5F 5F 69 6E 74 36 34 00 nsigned __int64.
+00C9    07 08 09 5F 42 6F 6F 6C 00 07 01 88 01 40 01 00 ..._Bool.....@..
+00D9    00 01 7C 00 00 00 12 03 0A                      ..|......
+00E2    00 00                                           DW	seg main_
+00E4    6D 61 69 6E 00 01 00 01 01 00 00 02 91 0C       main..........
+00F2    00 00                                           DW	offset main_
+00F4    4F 00                                           DW	offset L$7
+00F6    00 02 90 21 D2 01 01 00 01 2E 72 65 74 75 72 6E ...!......return
+0106    00 01 6B 7C 00 00 00 66 3F 01 00 00             ..k|...f?...
+0112    12 00                                           DW	offset L$1
+0114    46 00                                           DW	offset L$6
+0116    D2 01 01 00 00 69 00 02 91 7C 7C 00 00 00 D2 01 .....i...||.....
+0126    01 00 00 73 75 6D 00 02 91 7E 7C 00 00 00 66 3E ...sum...~|...f>
+0136    01 00 00                                        ...
+0139    22 00                                           DW	offset L$3
+013B    28 00                                           DW	offset L$4
+013D    00 00 00 00 00                                  .....
+
+Segment: .debug_pubnames BYTE USE32 0000001B bytes
+0000    17 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$9
+000A    4F 00 00 00 D4 00 00 00 6D 61 69 6E 00 00 00 00 O.......main....
+001A    00                                              .
+
+Segment: .debug_aranges BYTE USE32 0000001E bytes
+0000    1A 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$9
+000A    02 02                                           ..
+000C    00 00                                           DW	offset main_
+000E    00 00                                           DW	seg main_
+0010    4F 00                                           O.
+0012    00 00                                           DW	offset DGROUP:L$8
+0014    00 00                                           DW	seg DGROUP:L$8
+0016    04 00 00 00 00 00 00 00                         ........
+
+Segment: .debug_line BYTE USE32 00000043 bytes
+0000                          L$10:
+0000    3F 00 00 00 02 00 10 00 00 00 01 00 FF 04 0A 00 ?...............
+0010    01 01 01 01 00 00 00 00 00 00 00 0D 03 44 3A 5C .............D:\
+0020    53 55 4D 2E 43 00 00 00 00 00 03 02             SUM.C.......
+002C    00 00                                           DW	offset main_
+002E    00 03 04                                        ...
+0031    00 00                                           DW	seg main_
+0033    06 05 01 0D 03 03 53 21 38 24 2D 44 20 00 01 01 ......S!8$-D ...
+
+Segment: .debug_loc BYTE USE32 00000000 bytes
+
+Segment: .debug_abbrev BYTE USE32 0000006E bytes
+0000                          L$11:
+0000    06 11 01 01 13 03 08 10 06 13 0F 1B 08 25 08 42 .............%.B
+0010    0F 43 06 35 10 82 41 0B 83 41 06 00 00 09 24 00 .C.5..A..A....$.
+0020    03 08 3E 0B 0B 0B 00 00 88 01 2E 01 01 13 32 0B ..>...........2.
+0030    49 13 2C 0F 46 0A 03 08 3F 0C 20 0B 36 0B 27 0C I.,.F...?. .6.'.
+0040    4C 0B 34 0C 2A 0A 11 01 12 01 33 0B 40 0A 00 00 L.4.*.....3.@...
+0050    D2 01 34 00 32 0B 3F 0C 34 0C 03 08 02 0A 49 13 ..4.2.?.4.....I.
+0060    00 00 66 0B 01 01 13 11 01 12 01 00 00 00       ..f...........
+
+Segment: .debug_macinfo BYTE USE32 00000001 bytes
+0000                          L$12:
+0000    00                                              .
+
+Segment: .debug_str BYTE USE32 00000000 bytes
+
+Segment: .WATCOM_references BYTE USE32 00000004 bytes
+0000    00 00 00 00                                     ....
+0004                          L$13:
+
