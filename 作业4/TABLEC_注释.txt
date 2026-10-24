@@ -1,0 +1,250 @@
+; 九九乘法表：DOS 16 位目标文件反汇编中文注释版，UTF-8 编码。
+; i=[BP-2]，返回值暂存区=[BP-4]，j=[BP-6]，mult=[BP-8]。
+; word ptr 表示 16 位内存操作；-0x2[bp] 等价于 [BP-2]。
+; 原始 TABLEC.DIS 保留不变；这是 OBJ 反汇编，外部 CALL 的地址尚可能等待链接修正。
+; printf 参数从右到左压栈，调用后由当前函数释放参数空间。
+
+Module: D:\TABLE.C
+GROUP: 'DGROUP' CONST,CONST2,_DATA
+
+Segment: _TEXT BYTE USE16 0000009D bytes
+
+#include<stdio.h>
+int main()
+0000                          main_:
+0000    B8 1E 00                  mov         ax,0x001e    ; 准备运行库栈检查所需的空间量。
+0003    E8 00 00                  call        __STK    ; 调用运行库检查栈空间。
+0006    53                        push        bx    ; 把 BX 压栈，保存调用者寄存器。
+0007    51                        push        cx    ; 把 CX 压栈，保存调用者寄存器。
+0008    52                        push        dx    ; 把 DX 压栈，保存调用者寄存器。
+0009    56                        push        si    ; 把 SI 压栈，保存调用者寄存器。
+000A    57                        push        di    ; 把 DI 压栈，保存调用者寄存器。
+000B    55                        push        bp    ; 把 BP 压栈，保存调用者寄存器。
+000C    89 E5                     mov         bp,sp    ; 建立 BP 栈帧，作为定位局部变量的固定参照。
+000E    81 EC 08 00               sub         sp,0x0008    ; 为局部变量和返回值分配 8 字节。
+
+{
+    printf("The 9mul9 table:\n");
+0012                          L$1:
+0012    B8 00 00                  mov         ax,offset DGROUP:L$16    ; 取得标题字符串的地址。
+0015    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+0016    E8 00 00                  call        printf_    ; 调用 printf 输出字符串或算式；数字转字符由运行库完成。
+0019    83 C4 02                  add         sp,0x0002    ; SP 加 2，释放本次 printf 的参数空间。
+
+    for(int i=9;i>=1;i--){
+001C                          L$2:
+001C    C7 46 FE 09 00            mov         word ptr -0x2[bp],0x0009    ; i = 9，初始化外层行号。
+0021                          L$3:
+0021    83 7E FE 01               cmp         word ptr -0x2[bp],0x0001    ; 比较 i 和 1。
+0025    7C 65                     jl          L$13    ; i < 1 时结束外层循环，准备返回。
+
+        for(int j=1;j<=i;j++){
+0027                          L$4:
+0027    C7 46 FA 01 00            mov         word ptr -0x6[bp],0x0001    ; j = 1；每行开始重新初始化列号。
+002C                          L$5:
+002C    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; AX = j。
+002F    3B 46 FE                  cmp         ax,word ptr -0x2[bp]    ; 比较 j 和 i。
+0032    7F 45                     jg          L$11    ; j > i 时结束本行，跳去输出换行。
+
+            int mult=i*j;
+0034                          L$6:
+0034    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; AX = i，准备相乘。
+0037    F7 6E FA                  imul        word ptr -0x6[bp]    ; 有符号乘法 DX:AX = AX × j；C 的 int 为有符号类型，所以使用 IMUL。
+003A    89 46 F8                  mov         word ptr -0x8[bp],ax    ; mult = AX；最大结果 81，存低 16 位即可。
+
+            if(mult<10){
+003D    83 7E F8 0A               cmp         word ptr -0x8[bp],0x000a    ; 比较 mult 和十进制 10。
+0041    7D 18                     jge         L$9    ; mult >= 10 时跳到两位数的输出分支。
+
+                printf("%d*%d=%d     ",i,j,mult);
+0043                          L$7:
+0043    8B 46 F8                  mov         ax,word ptr -0x8[bp]    ; 取出 mult，作为 printf 的最后一个参数。
+0046    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+0047    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; 取出 j，准备传参。
+004A    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+004B    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; 取出 i，准备传参。
+004E    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+004F    B8 12 00                  mov         ax,offset DGROUP:L$17    ; 取出带 5 个末尾空格的格式字符串地址。
+0052    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+0053    E8 00 00                  call        printf_    ; 调用 printf 输出字符串或算式；数字转字符由运行库完成。
+0056    83 C4 08                  add         sp,0x0008    ; SP 加 8，释放本次 printf 的参数空间。
+
+            }
+            else{
+0059                          L$8:
+0059    EB 16                     jmp         L$10    ; 个位数分支完成，跳过 else 分支，去更新 j。
+
+                printf("%d*%d=%d    ",i,j,mult);
+005B                          L$9:
+005B    8B 46 F8                  mov         ax,word ptr -0x8[bp]    ; 两位数分支：取出 mult。
+005E    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+005F    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; 取出 j。
+0062    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+0063    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; 取出 i。
+0066    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+0067    B8 20 00                  mov         ax,offset DGROUP:L$18    ; 取出带 4 个末尾空格的格式字符串地址；少一个空格补偿多出的一位数字。
+006A    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+006B    E8 00 00                  call        printf_    ; 调用 printf 输出字符串或算式；数字转字符由运行库完成。
+006E    83 C4 08                  add         sp,0x0008    ; SP 加 8，释放本次 printf 的参数空间。
+
+            }
+        }
+0071                          L$10:
+0071    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; 读取 j 的旧值；未优化的 j++ 代码保留了这条读取，旧值之后未使用。
+0074    FF 46 FA                  inc         word ptr -0x6[bp]    ; j++，准备输出下一项。
+0077    EB B3                     jmp         L$5    ; 跳回内层条件判断。
+
+        printf("\n");
+0079                          L$11:
+0079    B8 2D 00                  mov         ax,offset DGROUP:L$19    ; 取得换行字符串的地址。
+007C    50                        push        ax    ; 把 AX 压栈，传递一个 2 字节参数。
+007D    E8 00 00                  call        printf_    ; 调用 printf 输出字符串或算式；数字转字符由运行库完成。
+0080    83 C4 02                  add         sp,0x0002    ; SP 加 2，释放本次 printf 的参数空间。
+
+    }
+0083                          L$12:
+0083    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; 读取 i 的旧值；未优化的 i-- 代码保留的动作。
+0086    83 46 FE FF               add         word ptr -0x2[bp],0xffff    ; i += -1，即 i--；0xFFFF 按 16 位补码表示 -1。
+008A    EB 95                     jmp         L$3    ; 跳回外层条件判断，开始下一行。
+
+    
+    return 0;
+008C                          L$13:
+008C    C7 46 FC 00 00            mov         word ptr -0x4[bp],0x0000    ; 把 main 的返回值暂存为 0。
+
+0091    8B 46 FC                  mov         ax,word ptr -0x4[bp]    ; 将返回值取到 AX。
+0094                          L$14:
+0094    89 EC                     mov         sp,bp    ; 恢复 SP，释放局部变量空间。
+0096    5D                        pop         bp    ; 恢复调用者的 BP，与函数入口的保存顺序相反。
+0097    5F                        pop         di    ; 恢复调用者的 DI，与函数入口的保存顺序相反。
+0098    5E                        pop         si    ; 恢复调用者的 SI，与函数入口的保存顺序相反。
+0099    5A                        pop         dx    ; 恢复调用者的 DX，与函数入口的保存顺序相反。
+009A    59                        pop         cx    ; 恢复调用者的 CX，与函数入口的保存顺序相反。
+009B    5B                        pop         bx    ; 恢复调用者的 BX，与函数入口的保存顺序相反。
+009C    C3                        ret    ; 返回 C 运行库；由运行库继续处理程序退出。
+009D                          L$15:
+
+Routine Size: 157 bytes,    Routine Base: _TEXT + 0000
+
+No disassembly errors
+
+; 以下为以 00 结束的 C 字符串数据。
+Segment: CONST WORD USE16 0000002F bytes
+0000                          L$16:
+0000    54 68 65 20 39 6D 75 6C 39 20 74 61 62 6C 65 3A The 9mul9 table:
+0010    0A 00                                           ..
+0012                          L$17:
+0012    25 64 2A 25 64 3D 25 64 20 20 20 20 20 00       %d*%d=%d     .
+0020                          L$18:
+0020    25 64 2A 25 64 3D 25 64 20 20 20 20 00          %d*%d=%d    .
+002D                          L$19:
+002D    0A 00                                           ..
+
+Segment: CONST2 WORD USE16 00000000 bytes
+
+Segment: _DATA WORD USE16 00000000 bytes
+
+; 后面为调试信息，非执行代码。USE32 是元数据段标记，不代表主代码是 32 位。
+Segment: .debug_info BYTE USE32 00000185 bytes
+0000                          L$20:
+0000    81 01 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$22
+000A    02 06 84 01 00 00 44 3A 5C 54 41 42 4C 45 2E 43 ......D:\TABLE.C
+001A    00                                              .
+001B    00 00 00 00                                     DD	offset L$21
+001F    01 00 56 31 2E 30 20 57 41 54 43 4F 4D 00 00    ..V1.0 WATCOM..
+002E    00 00 00 00                                     DD	offset L$23
+0032    00 00 00 00 02                                  .....
+0037    04 00 00 00                                     DD	offset L$24
+003B    09 63 68 61 72 00 08 01 09 73 69 67 6E 65 64 20 .char....signed 
+004B    63 68 61 72 00 06 01 09 75 6E 73 69 67 6E 65 64 char....unsigned
+005B    20 63 68 61 72 00 08 01 09 73 68 6F 72 74 00 05  char....short..
+006B    02 09 75 6E 73 69 67 6E 65 64 20 73 68 6F 72 74 ..unsigned short
+007B    00 07 02 09 69 6E 74 00 05 02 09 75 6E 73 69 67 ....int....unsig
+008B    6E 65 64 20 69 6E 74 00 07 02 09 6C 6F 6E 67 00 ned int....long.
+009B    05 04 09 75 6E 73 69 67 6E 65 64 20 6C 6F 6E 67 ...unsigned long
+00AB    00 07 04 09 5F 5F 69 6E 74 36 34 00 05 08 09 75 ....__int64....u
+00BB    6E 73 69 67 6E 65 64 20 5F 5F 69 6E 74 36 34 00 nsigned __int64.
+00CB    07 08 09 5F 42 6F 6F 6C 00 07 01 88 01 83 01 00 ..._Bool........
+00DB    00 01 7E 00 00 00 12 03 0A                      ..~......
+00E4    00 00                                           DW	seg main_
+00E6    6D 61 69 6E 00 01 00 01 01 00 00 02 91 0C       main..........
+00F4    00 00                                           DW	offset main_
+00F6    9D 00                                           DW	offset L$15
+00F8    00 02 90 21 D2 01 01 00 01 2E 72 65 74 75 72 6E ...!......return
+0108    00 01 6B 7E 00 00 00 66 82 01 00 00             ..k~...f....
+0114    12 00                                           DW	offset L$1
+0116    94 00                                           DW	offset L$14
+0118    66 81 01 00 00                                  f....
+011D    1C 00                                           DW	offset L$2
+011F    8C 00                                           DW	offset L$13
+0121    D2 01 01 00 00 69 00 02 91 7E 7E 00 00 00 66 80 .....i...~~...f.
+0131    01 00 00                                        ...
+0134    27 00                                           DW	offset L$4
+0136    83 00                                           DW	offset L$12
+0138    66 7F 01 00 00                                  f....
+013D    27 00                                           DW	offset L$4
+013F    79 00                                           DW	offset L$11
+0141    D2 01 01 00 00 6A 00 02 91 7A 7E 00 00 00 66 7E .....j...z~...f~
+0151    01 00 00                                        ...
+0154    34 00                                           DW	offset L$6
+0156    71 00                                           DW	offset L$10
+0158    D2 01 01 00 00 6D 75 6C 74 00 02 91 78 7E 00 00 .....mult...x~..
+0168    00 66 73 01 00 00                               .fs...
+016E    43 00                                           DW	offset L$7
+0170    59 00                                           DW	offset L$8
+0172    00 66 7D 01 00 00                               .f}...
+0178    5B 00                                           DW	offset L$9
+017A    71 00                                           DW	offset L$10
+017C    00 00 00 00 00 00 00 00 00                      .........
+
+Segment: .debug_pubnames BYTE USE32 0000001B bytes
+0000    17 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$20
+000A    9D 00 00 00 D6 00 00 00 6D 61 69 6E 00 00 00 00 ........main....
+001A    00                                              .
+
+Segment: .debug_aranges BYTE USE32 0000001E bytes
+0000    1A 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$20
+000A    02 02                                           ..
+000C    00 00                                           DW	offset main_
+000E    00 00                                           DW	seg main_
+0010    9D 00                                           ..
+0012    00 00                                           DW	offset DGROUP:L$16
+0014    00 00                                           DW	seg DGROUP:L$16
+0016    2F 00 00 00 00 00 00 00                         /.......
+
+Segment: .debug_line BYTE USE32 00000049 bytes
+0000                          L$21:
+0000    45 00 00 00 02 00 10 00 00 00 01 00 FF 04 0A 00 E...............
+0010    01 01 01 01 00 00 00 00 00 00 00 0F 03 44 3A 5C .............D:\
+0020    54 41 42 4C 45 2E 43 00 00 00 00 00 03 02       TABLE.C.......
+002E    00 00                                           DW	offset main_
+0030    00 03 04                                        ...
+0033    00 00                                           DW	seg main_
+0035    06 05 01 0C 55 34 38 40 30 24 65 14 65 2C 34 31 ....U48@0$e.e,41
+0045    20 00 01 01                                      ...
+
+Segment: .debug_loc BYTE USE32 00000000 bytes
+
+Segment: .debug_abbrev BYTE USE32 0000006E bytes
+0000                          L$22:
+0000    06 11 01 01 13 03 08 10 06 13 0F 1B 08 25 08 42 .............%.B
+0010    0F 43 06 35 10 82 41 0B 83 41 06 00 00 09 24 00 .C.5..A..A....$.
+0020    03 08 3E 0B 0B 0B 00 00 88 01 2E 01 01 13 32 0B ..>...........2.
+0030    49 13 2C 0F 46 0A 03 08 3F 0C 20 0B 36 0B 27 0C I.,.F...?. .6.'.
+0040    4C 0B 34 0C 2A 0A 11 01 12 01 33 0B 40 0A 00 00 L.4.*.....3.@...
+0050    D2 01 34 00 32 0B 3F 0C 34 0C 03 08 02 0A 49 13 ..4.2.?.4.....I.
+0060    00 00 66 0B 01 01 13 11 01 12 01 00 00 00       ..f...........
+
+Segment: .debug_macinfo BYTE USE32 00000001 bytes
+0000                          L$23:
+0000    00                                              .
+
+Segment: .debug_str BYTE USE32 00000000 bytes
+
+Segment: .WATCOM_references BYTE USE32 00000004 bytes
+0000    00 00 00 00                                     ....
+0004                          L$24:
+
