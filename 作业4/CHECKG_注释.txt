@@ -1,0 +1,259 @@
+; DOS 16位目标文件反汇编中文注释版；UTF-8编码。
+; 原始.DIS未修改；这是OBJ段内偏移，CALL地址仍可能需要链接修正。
+; 数组按行连续存储，元素偏移=i*9+j。局部数组版请重点阅读初始化复制和BP+SI寻址。
+
+Module: D:\CHECKG.C
+GROUP: 'DGROUP' CONST,CONST2,_DATA
+
+Segment: _TEXT BYTE USE16 00000094 bytes
+
+#include<stdio.h>
+
+unsigned char tableData[9][9]={
+    {7, 2, 3, 4, 5, 6, 7, 8, 9},
+    {2, 4, 7, 8, 10, 12, 14, 16, 18},
+    {3, 6, 9, 12, 15, 18, 21, 24, 27},
+    {4, 8, 12, 16, 7, 24, 28, 32, 36},
+    {5, 10, 15, 20, 25, 30, 35, 40, 45},
+    {6, 12, 18, 24, 30, 7, 42, 48, 54},
+    {7, 14, 21, 28, 35, 42, 49, 56, 63},
+    {8, 16, 24, 32, 40, 48, 56, 7, 72},
+    {9, 18, 27, 36, 45, 54, 63, 72, 81}
+};
+
+int main()
+0000                          main_:
+0000    B8 1A 00                  mov         ax,0x001a    ; 为运行库栈空间检查准备所需空间量。
+0003    E8 00 00                  call        __STK    ; 调用__STK，检查栈空间。
+0006    53                        push        bx    ; 压入BX，保存调用者寄存器。
+0007    51                        push        cx    ; 压入CX，保存调用者寄存器。
+0008    52                        push        dx    ; 压入DX，保存调用者寄存器。
+0009    56                        push        si    ; 压入SI，保存调用者寄存器。
+000A    57                        push        di    ; 压入DI，保存调用者寄存器。
+000B    55                        push        bp    ; 压入BP，保存调用者寄存器。
+000C    89 E5                     mov         bp,sp    ; 建立栈帧，BP作为定位局部变量的参照。
+000E    81 EC 06 00               sub         sp,0x0006    ; 分配6字节局部空间：i=[BP-2]、返回值=[BP-4]、j=[BP-6]。
+
+{
+    printf("x y\n");
+0012                          L$1:
+0012    B8 00 00                  mov         ax,offset DGROUP:L$13    ; 取得后面CONST段中对应格式或提示字符串的偏移地址。
+0015    50                        push        ax    ; 压入AX，传递一个2字节的printf参数；本次参数从右到左压栈。
+0016    E8 00 00                  call        printf_    ; 调用printf_，由标准库完成输出。
+0019    83 C4 02                  add         sp,0x0002    ; 释放printf的参数空间，共2字节。
+
+    for(int i=0;i<9;i++){
+001C                          L$2:
+001C    C7 46 FE 00 00            mov         word ptr -0x2[bp],0x0000    ; i=0，开始遍历第1行。
+0021                          L$3:
+0021    83 7E FE 09               cmp         word ptr -0x2[bp],0x0009    ; 比较行下标i和9。
+0025    7D 52                     jge         L$10    ; i>=9，结束全部检查。
+
+        for(int j=0;j<9;j++){
+0027                          L$4:
+0027    C7 46 FA 00 00            mov         word ptr -0x6[bp],0x0000    ; 每行开始令j=0。
+002C                          L$5:
+002C    83 7E FA 09               cmp         word ptr -0x6[bp],0x0009    ; 比较列下标j和9。
+0030    7D 3F                     jge         L$9    ; j>=9，结束本行，转到i++。
+
+            if(tableData[i][j]!=(i+1)*(j+1)){
+0032                          L$6:
+0032    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; AX=i，准备计算数组的一维偏移。
+0035    BB 09 00                  mov         bx,0x0009    ; BX=9，每行有9个字节。
+0038    F7 EB                     imul        bx    ; DX:AX=i×9。
+003A    8B 5E FA                  mov         bx,word ptr -0x6[bp]    ; BX=j。
+003D    01 C3                     add         bx,ax    ; BX=i×9+j，即当前元素相对数组起点的字节偏移。
+003F    8A 87 00 00               mov         al,byte ptr _tableData[bx]    ; 从数据段读取tableData[i][j]；全局数组以_tableData符号定位。
+0043    30 E4                     xor         ah,ah    ; AH清零，将unsigned char零扩展为16位整数。
+0045    89 C1                     mov         cx,ax    ; CX保存读取的表值，供稍后比较。
+0047    8B 5E FA                  mov         bx,word ptr -0x6[bp]    ; BX=j。
+004A    43                        inc         bx    ; BX=j+1，得到实际列号。
+004B    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; AX=i。
+004E    40                        inc         ax    ; AX=i+1，得到实际行号。
+004F    F7 EB                     imul        bx    ; DX:AX=(i+1)×(j+1)，计算正确乘积。
+0051    39 C1                     cmp         cx,ax    ; 比较表中的值CX与正确乘积AX。
+0053    74 14                     je          L$8    ; 两者相等就跳过错误输出。
+
+                printf("%d %d    error\n",i+1,j+1);
+0055                          L$7:
+0055    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; 读取j，准备输出列号。
+0058    40                        inc         ax    ; 列下标加1，转换成从1开始的列号。
+0059    50                        push        ax    ; 压入AX，传递一个2字节的printf参数；本次参数从右到左压栈。
+005A    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; 读取i，准备输出行号。
+005D    40                        inc         ax    ; 行下标加1，转换成从1开始的行号。
+005E    50                        push        ax    ; 压入AX，传递一个2字节的printf参数；本次参数从右到左压栈。
+005F    B8 05 00                  mov         ax,offset DGROUP:L$14    ; 取得后面CONST段中对应格式或提示字符串的偏移地址。
+0062    50                        push        ax    ; 压入AX，传递一个2字节的printf参数；本次参数从右到左压栈。
+0063    E8 00 00                  call        printf_    ; 调用printf_，由标准库完成输出。
+0066    83 C4 06                  add         sp,0x0006    ; 释放printf的参数空间，共6字节。
+
+            }
+        }
+0069                          L$8:
+0069    8B 46 FA                  mov         ax,word ptr -0x6[bp]    ; 读取j的旧值，未优化代码保留的动作，旧值之后未使用。
+006C    FF 46 FA                  inc         word ptr -0x6[bp]    ; j++，准备下一列。
+006F    EB BB                     jmp         L$5    ; 回到内层循环条件检查。
+
+    }
+0071                          L$9:
+0071    8B 46 FE                  mov         ax,word ptr -0x2[bp]    ; 读取i的旧值，未优化代码保留的动作。
+0074    FF 46 FE                  inc         word ptr -0x2[bp]    ; i++，准备下一行。
+0077    EB A8                     jmp         L$3    ; 回到外层循环条件检查。
+
+    printf("\naccomplish!\n");
+0079                          L$10:
+0079    B8 15 00                  mov         ax,offset DGROUP:L$15    ; 取得后面CONST段中对应格式或提示字符串的偏移地址。
+007C    50                        push        ax    ; 压入AX，传递一个2字节的printf参数；本次参数从右到左压栈。
+007D    E8 00 00                  call        printf_    ; 调用printf_，由标准库完成输出。
+0080    83 C4 02                  add         sp,0x0002    ; 释放printf的参数空间，共2字节。
+
+    return 0;
+0083    C7 46 FC 00 00            mov         word ptr -0x4[bp],0x0000    ; 将main的返回值暂存为0。
+
+}
+0088    8B 46 FC                  mov         ax,word ptr -0x4[bp]    ; AX取出main的返回值0。
+008B                          L$11:
+008B    89 EC                     mov         sp,bp    ; 恢复SP，释放局部变量空间。
+008D    5D                        pop         bp    ; 恢复调用前的BP。
+008E    5F                        pop         di    ; 恢复调用前的DI。
+008F    5E                        pop         si    ; 恢复调用前的SI。
+0090    5A                        pop         dx    ; 恢复调用前的DX。
+0091    59                        pop         cx    ; 恢复调用前的CX。
+0092    5B                        pop         bx    ; 恢复调用前的BX。
+0093    C3                        ret    ; 返回C运行库，由运行库完成程序退出。
+0094                          L$12:
+
+Routine Size: 148 bytes,    Routine Base: _TEXT + 0000
+
+No disassembly errors
+
+Segment: CONST WORD USE16 00000023 bytes
+0000                          L$13:
+0000    78 20 79 0A 00                                  x y..
+0005                          L$14:
+0005    25 64 20 25 64 20 20 20 20 65 72 72 6F 72 0A 00 %d %d    error..
+0015                          L$15:
+0015    0A 61 63 63 6F 6D 70 6C 69 73 68 21 0A 00       .accomplish!..
+
+Segment: CONST2 WORD USE16 00000000 bytes
+
+; 全局版这里是数组本体；局部版这里是初始化模板，运行时还会复制到栈上。
+Segment: _DATA WORD USE16 00000051 bytes
+0000                          _tableData:
+0000    07 02 03 04 05 06 07 08 09 02 04 07 08 0A 0C 0E ................
+0010    10 12 03 06 09 0C 0F 12 15 18 1B 04 08 0C 10 07 ................
+0020    18 1C 20 24 05 0A 0F 14 19 1E 23 28 2D 06 0C 12 .. $......#(-...
+0030    18 1E 07 2A 30 36 07 0E 15 1C 23 2A 31 38 3F 08 ...*06....#*18?.
+0040    10 18 20 28 30 38 07 48 09 12 1B 24 2D 36 3F 48 .. (08.H...$-6?H
+0050    51                                              Q
+
+; 以下为调试元数据，不是执行指令，初次阅读可跳过。
+Segment: .debug_info BYTE USE32 00000192 bytes
+0000                          L$16:
+0000    8E 01 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$18
+000A    02 06 91 01 00 00 44 3A 5C 43 48 45 43 4B 47 2E ......D:\CHECKG.
+001A    43 00                                           C.
+001C    00 00 00 00                                     DD	offset L$17
+0020    01 00 56 31 2E 30 20 57 41 54 43 4F 4D 00 00    ..V1.0 WATCOM..
+002F    00 00 00 00                                     DD	offset L$19
+0033    00 00 00 00 02                                  .....
+0038    04 00 00 00                                     DD	offset L$20
+003C    09 63 68 61 72 00 08 01 09 73 69 67 6E 65 64 20 .char....signed 
+004C    63 68 61 72 00 06 01 09 75 6E 73 69 67 6E 65 64 char....unsigned
+005C    20 63 68 61 72 00 08 01 09 73 68 6F 72 74 00 05  char....short..
+006C    02 09 75 6E 73 69 67 6E 65 64 20 73 68 6F 72 74 ..unsigned short
+007C    00 07 02 09 69 6E 74 00 05 02 09 75 6E 73 69 67 ....int....unsig
+008C    6E 65 64 20 69 6E 74 00 07 02 09 6C 6F 6E 67 00 ned int....long.
+009C    05 04 09 75 6E 73 69 67 6E 65 64 20 6C 6F 6E 67 ...unsigned long
+00AC    00 07 04 09 5F 5F 69 6E 74 36 34 00 05 08 09 75 ....__int64....u
+00BC    6E 73 69 67 6E 65 64 20 5F 5F 69 6E 74 36 34 00 nsigned __int64.
+00CC    07 08 09 5F 42 6F 6F 6C 00 07 01 18 09 53 00 00 ..._Bool.....S..
+00DC    00 18 09 D7 00 00 00 D3 01 01 03 0A             ............
+00E8    00 00                                           DW	seg _tableData
+00EA    01 00 74 61 62 6C 65 44 61 74 61 00 03 03       ..tableData...
+00F8    00 00                                           DW	offset _tableData
+00FA    DD 00 00 00 88 01 90 01 00 00 01 7F 00 00 00 12 ................
+010A    03 0A                                           ..
+010C    00 00                                           DW	seg main_
+010E    6D 61 69 6E 00 01 00 01 01 00 00 02 91 0C       main..........
+011C    00 00                                           DW	offset main_
+011E    94 00                                           DW	offset L$12
+0120    00 02 90 21 D2 01 01 00 01 2E 72 65 74 75 72 6E ...!......return
+0130    00 01 6B 7F 00 00 00 66 8F 01 00 00             ..k....f....
+013C    12 00                                           DW	offset L$1
+013E    8B 00                                           DW	offset L$11
+0140    66 8E 01 00 00                                  f....
+0145    1C 00                                           DW	offset L$2
+0147    79 00                                           DW	offset L$10
+0149    D2 01 01 00 00 69 00 02 91 7E 7F 00 00 00 66 8D .....i...~....f.
+0159    01 00 00                                        ...
+015C    27 00                                           DW	offset L$4
+015E    71 00                                           DW	offset L$9
+0160    66 8C 01 00 00                                  f....
+0165    27 00                                           DW	offset L$4
+0167    71 00                                           DW	offset L$9
+0169    D2 01 01 00 00 6A 00 02 91 7A 7F 00 00 00 66 8B .....j...z....f.
+0179    01 00 00                                        ...
+017C    32 00                                           DW	offset L$6
+017E    69 00                                           DW	offset L$8
+0180    66 8A 01 00 00                                  f....
+0185    55 00                                           DW	offset L$7
+0187    69 00                                           DW	offset L$8
+0189    00 00 00 00 00 00 00 00 00                      .........
+
+Segment: .debug_pubnames BYTE USE32 00000029 bytes
+0000    25 00 00 00 02 00                               %.....
+0006    00 00 00 00                                     DD	offset L$16
+000A    94 00 00 00 E3 00 00 00 74 61 62 6C 65 44 61 74 ........tableDat
+001A    61 00 FE 00 00 00 6D 61 69 6E 00 00 00 00 00    a.....main.....
+
+Segment: .debug_aranges BYTE USE32 00000024 bytes
+0000    20 00 00 00 02 00                                .....
+0006    00 00 00 00                                     DD	offset L$16
+000A    02 02                                           ..
+000C    00 00                                           DW	offset main_
+000E    00 00                                           DW	seg main_
+0010    94 00                                           ..
+0012    00 00                                           DW	offset DGROUP:L$13
+0014    00 00                                           DW	seg DGROUP:L$13
+0016    23 00                                           #.
+0018    00 00                                           DW	offset DGROUP:_tableData
+001A    00 00                                           DW	seg DGROUP:_tableData
+001C    51 00 00 00 00 00 00 00                         Q.......
+
+Segment: .debug_line BYTE USE32 00000049 bytes
+0000                          L$17:
+0000    45 00 00 00 02 00 10 00 00 00 01 00 FF 04 0A 00 E...............
+0010    01 01 01 01 00 00 00 00 00 00 00 10 03 44 3A 5C .............D:\
+0020    43 48 45 43 4B 47 2E 43 00 00 00 00 00 03 02    CHECKG.C.......
+002F    00 00                                           DW	offset main_
+0031    00 03 04                                        ...
+0034    00 00                                           DW	seg main_
+0036    06 05 01 03 0E 01 55 34 38 38 98 5D 2C 2C 34 20 ......U488.],,4 
+0046    00 01 01                                        ...
+
+Segment: .debug_loc BYTE USE32 00000000 bytes
+
+Segment: .debug_abbrev BYTE USE32 0000008B bytes
+0000                          L$18:
+0000    06 11 01 01 13 03 08 10 06 13 0F 1B 08 25 08 42 .............%.B
+0010    0F 43 06 35 10 82 41 0B 83 41 06 00 00 09 24 00 .C.5..A..A....$.
+0020    03 08 3E 0B 0B 0B 00 00 18 01 00 37 0F 49 13 00 ..>........7.I..
+0030    00 D3 01 34 00 32 0B 46 0A 3F 0C 34 0C 03 08 02 ...4.2.F.?.4....
+0040    0A 49 13 00 00 88 01 2E 01 01 13 32 0B 49 13 2C .I.........2.I.,
+0050    0F 46 0A 03 08 3F 0C 20 0B 36 0B 27 0C 4C 0B 34 .F...?. .6.'.L.4
+0060    0C 2A 0A 11 01 12 01 33 0B 40 0A 00 00 D2 01 34 .*.....3.@.....4
+0070    00 32 0B 3F 0C 34 0C 03 08 02 0A 49 13 00 00 66 .2.?.4.....I...f
+0080    0B 01 01 13 11 01 12 01 00 00 00                ...........
+
+Segment: .debug_macinfo BYTE USE32 00000001 bytes
+0000                          L$19:
+0000    00                                              .
+
+Segment: .debug_str BYTE USE32 00000000 bytes
+
+Segment: .WATCOM_references BYTE USE32 00000004 bytes
+0000    00 00 00 00                                     ....
+0004                          L$20:
+

@@ -1,0 +1,259 @@
+Module: D:\CHECKL.C
+GROUP: 'DGROUP' CONST,CONST2,_DATA
+
+Segment: _TEXT BYTE USE16 000000A3 bytes
+
+#include<stdio.h>
+
+
+
+int main()
+0000                          main_:
+0000    B8 6C 00                  mov         ax,0x006c 
+0003    E8 00 00                  call        __STK 
+0006    53                        push        bx 
+0007    51                        push        cx 
+0008    52                        push        dx 
+0009    56                        push        si 
+000A    57                        push        di 
+000B    55                        push        bp 
+000C    89 E5                     mov         bp,sp 
+000E    81 EC 58 00               sub         sp,0x0058 
+
+{
+    unsigned char tableData[9][9]={
+0012                          L$1:
+0012    B9 28 00                  mov         cx,0x0028 
+0015    8C D0                     mov         ax,ss 
+0017    8E C0                     mov         es,ax 
+0019    8D 7E AA                  lea         di,-0x56[bp] 
+001C    BE 00 00                  mov         si,offset DGROUP:L$16 
+001F    F3 A5                     rep movsw   
+0021    A4                        movsb       
+
+        {7, 2, 3, 4, 5, 6, 7, 8, 9},
+        {2, 4, 7, 8, 10, 12, 14, 16, 18},
+        {3, 6, 9, 12, 15, 18, 21, 24, 27},
+        {4, 8, 12, 16, 7, 24, 28, 32, 36},
+        {5, 10, 15, 20, 25, 30, 35, 40, 45},
+        {6, 12, 18, 24, 30, 7, 42, 48, 54},
+        {7, 14, 21, 28, 35, 42, 49, 56, 63},
+        {8, 16, 24, 32, 40, 48, 56, 7, 72},
+        {9, 18, 27, 36, 45, 54, 63, 72, 81}
+    };
+
+    printf("x y\n");
+0022    B8 00 00                  mov         ax,offset DGROUP:L$13 
+0025    50                        push        ax 
+0026    E8 00 00                  call        printf_ 
+0029    83 C4 02                  add         sp,0x0002 
+
+    for(int i=0;i<9;i++){
+002C                          L$2:
+002C    C7 46 FE 00 00            mov         word ptr -0x2[bp],0x0000 
+0031                          L$3:
+0031    83 7E FE 09               cmp         word ptr -0x2[bp],0x0009 
+0035    7D 51                     jge         L$10 
+
+        for(int j=0;j<9;j++){
+0037                          L$4:
+0037    C7 46 A8 00 00            mov         word ptr -0x58[bp],0x0000 
+003C                          L$5:
+003C    83 7E A8 09               cmp         word ptr -0x58[bp],0x0009 
+0040    7D 3E                     jge         L$9 
+
+            if(tableData[i][j]!=(i+1)*(j+1)){
+0042                          L$6:
+0042    8B 46 FE                  mov         ax,word ptr -0x2[bp] 
+0045    BE 09 00                  mov         si,0x0009 
+0048    F7 EE                     imul        si 
+004A    8B 76 A8                  mov         si,word ptr -0x58[bp] 
+004D    01 C6                     add         si,ax 
+004F    8A 42 AA                  mov         al,byte ptr -0x56[bp+si] 
+0052    30 E4                     xor         ah,ah 
+0054    89 C3                     mov         bx,ax 
+0056    8B 76 A8                  mov         si,word ptr -0x58[bp] 
+0059    46                        inc         si 
+005A    8B 46 FE                  mov         ax,word ptr -0x2[bp] 
+005D    40                        inc         ax 
+005E    F7 EE                     imul        si 
+0060    39 C3                     cmp         bx,ax 
+0062    74 14                     je          L$8 
+
+                printf("%d %d    error\n",i+1,j+1);
+0064                          L$7:
+0064    8B 46 A8                  mov         ax,word ptr -0x58[bp] 
+0067    40                        inc         ax 
+0068    50                        push        ax 
+0069    8B 46 FE                  mov         ax,word ptr -0x2[bp] 
+006C    40                        inc         ax 
+006D    50                        push        ax 
+006E    B8 05 00                  mov         ax,offset DGROUP:L$14 
+0071    50                        push        ax 
+0072    E8 00 00                  call        printf_ 
+0075    83 C4 06                  add         sp,0x0006 
+
+            }
+        }
+0078                          L$8:
+0078    8B 46 A8                  mov         ax,word ptr -0x58[bp] 
+007B    FF 46 A8                  inc         word ptr -0x58[bp] 
+007E    EB BC                     jmp         L$5 
+
+    }
+0080                          L$9:
+0080    8B 46 FE                  mov         ax,word ptr -0x2[bp] 
+0083    FF 46 FE                  inc         word ptr -0x2[bp] 
+0086    EB A9                     jmp         L$3 
+
+    printf("\naccomplish!\n");
+0088                          L$10:
+0088    B8 15 00                  mov         ax,offset DGROUP:L$15 
+008B    50                        push        ax 
+008C    E8 00 00                  call        printf_ 
+008F    83 C4 02                  add         sp,0x0002 
+
+    return 0;
+0092    C7 46 FC 00 00            mov         word ptr -0x4[bp],0x0000 
+
+}
+0097    8B 46 FC                  mov         ax,word ptr -0x4[bp] 
+009A                          L$11:
+009A    89 EC                     mov         sp,bp 
+009C    5D                        pop         bp 
+009D    5F                        pop         di 
+009E    5E                        pop         si 
+009F    5A                        pop         dx 
+00A0    59                        pop         cx 
+00A1    5B                        pop         bx 
+00A2    C3                        ret         
+00A3                          L$12:
+
+Routine Size: 163 bytes,    Routine Base: _TEXT + 0000
+
+No disassembly errors
+
+Segment: CONST WORD USE16 00000023 bytes
+0000                          L$13:
+0000    78 20 79 0A 00                                  x y..
+0005                          L$14:
+0005    25 64 20 25 64 20 20 20 20 65 72 72 6F 72 0A 00 %d %d    error..
+0015                          L$15:
+0015    0A 61 63 63 6F 6D 70 6C 69 73 68 21 0A 00       .accomplish!..
+
+Segment: CONST2 WORD USE16 00000000 bytes
+
+Segment: _DATA WORD USE16 00000051 bytes
+0000                          L$16:
+0000    07 02 03 04 05 06 07 08 09 02 04 07 08 0A 0C 0E ................
+0010    10 12 03 06 09 0C 0F 12 15 18 1B 04 08 0C 10 07 ................
+0020    18 1C 20 24 05 0A 0F 14 19 1E 23 28 2D 06 0C 12 .. $......#(-...
+0030    18 1E 07 2A 30 36 07 0E 15 1C 23 2A 31 38 3F 08 ...*06....#*18?.
+0040    10 18 20 28 30 38 07 48 09 12 1B 24 2D 36 3F 48 .. (08.H...$-6?H
+0050    51                                              Q
+
+Segment: .debug_info BYTE USE32 0000018F bytes
+0000                          L$17:
+0000    8B 01 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$19
+000A    02 06 8E 01 00 00 44 3A 5C 43 48 45 43 4B 4C 2E ......D:\CHECKL.
+001A    43 00                                           C.
+001C    00 00 00 00                                     DD	offset L$18
+0020    01 00 56 31 2E 30 20 57 41 54 43 4F 4D 00 00    ..V1.0 WATCOM..
+002F    00 00 00 00                                     DD	offset L$20
+0033    00 00 00 00 02                                  .....
+0038    04 00 00 00                                     DD	offset L$21
+003C    09 63 68 61 72 00 08 01 09 73 69 67 6E 65 64 20 .char....signed 
+004C    63 68 61 72 00 06 01 09 75 6E 73 69 67 6E 65 64 char....unsigned
+005C    20 63 68 61 72 00 08 01 09 73 68 6F 72 74 00 05  char....short..
+006C    02 09 75 6E 73 69 67 6E 65 64 20 73 68 6F 72 74 ..unsigned short
+007C    00 07 02 09 69 6E 74 00 05 02 09 75 6E 73 69 67 ....int....unsig
+008C    6E 65 64 20 69 6E 74 00 07 02 09 6C 6F 6E 67 00 ned int....long.
+009C    05 04 09 75 6E 73 69 67 6E 65 64 20 6C 6F 6E 67 ...unsigned long
+00AC    00 07 04 09 5F 5F 69 6E 74 36 34 00 05 08 09 75 ....__int64....u
+00BC    6E 73 69 67 6E 65 64 20 5F 5F 69 6E 74 36 34 00 nsigned __int64.
+00CC    07 08 09 5F 42 6F 6F 6C 00 07 01 88 01 8D 01 00 ..._Bool........
+00DC    00 01 7F 00 00 00 12 03 0A                      .........
+00E5    00 00                                           DW	seg main_
+00E7    6D 61 69 6E 00 01 00 01 01 00 00 02 91 0C       main..........
+00F5    00 00                                           DW	offset main_
+00F7    A3 00                                           DW	offset L$12
+00F9    00 02 90 21 D2 01 01 00 01 2E 72 65 74 75 72 6E ...!......return
+0109    00 01 6B 7F 00 00 00 66 8C 01 00 00             ..k....f....
+0115    12 00                                           DW	offset L$1
+0117    9A 00                                           DW	offset L$11
+0119    18 09 53 00 00 00 18 09 19 01 00 00 D2 01 01 00 ..S.............
+0129    00 74 61 62 6C 65 44 61 74 61 00 03 91 AA 7F 1F .tableData......
+0139    01 00 00 66 8B 01 00 00                         ...f....
+0141    2C 00                                           DW	offset L$2
+0143    88 00                                           DW	offset L$10
+0145    D2 01 01 00 00 69 00 02 91 7E 7F 00 00 00 66 8A .....i...~....f.
+0155    01 00 00                                        ...
+0158    37 00                                           DW	offset L$4
+015A    80 00                                           DW	offset L$9
+015C    66 89 01 00 00                                  f....
+0161    37 00                                           DW	offset L$4
+0163    80 00                                           DW	offset L$9
+0165    D2 01 01 00 00 6A 00 03 91 A8 7F 7F 00 00 00 66 .....j.........f
+0175    88 01 00 00                                     ....
+0179    42 00                                           DW	offset L$6
+017B    78 00                                           DW	offset L$8
+017D    66 87 01 00 00                                  f....
+0182    64 00                                           DW	offset L$7
+0184    78 00                                           DW	offset L$8
+0186    00 00 00 00 00 00 00 00 00                      .........
+
+Segment: .debug_pubnames BYTE USE32 0000001B bytes
+0000    17 00 00 00 02 00                               ......
+0006    00 00 00 00                                     DD	offset L$17
+000A    A3 00 00 00 D7 00 00 00 6D 61 69 6E 00 00 00 00 ........main....
+001A    00                                              .
+
+Segment: .debug_aranges BYTE USE32 00000024 bytes
+0000    20 00 00 00 02 00                                .....
+0006    00 00 00 00                                     DD	offset L$17
+000A    02 02                                           ..
+000C    00 00                                           DW	offset main_
+000E    00 00                                           DW	seg main_
+0010    A3 00                                           ..
+0012    00 00                                           DW	offset DGROUP:L$13
+0014    00 00                                           DW	seg DGROUP:L$13
+0016    23 00                                           #.
+0018    00 00                                           DW	offset DGROUP:L$16
+001A    00 00                                           DW	seg DGROUP:L$16
+001C    51 00 00 00 00 00 00 00                         Q.......
+
+Segment: .debug_line BYTE USE32 0000004C bytes
+0000                          L$18:
+0000    48 00 00 00 02 00 10 00 00 00 01 00 FF 04 0A 00 H...............
+0010    01 01 01 01 00 00 00 00 00 00 00 10 03 44 3A 5C .............D:\
+0020    43 48 45 43 4B 4C 2E 43 00 00 00 00 00 03 02    CHECKL.C.......
+002F    00 00                                           DW	offset main_
+0031    00 03 04                                        ...
+0034    00 00                                           DW	seg main_
+0036    06 05 01 03 04 01 55 03 0C 4B 34 38 38 94 5D 2C ......U..K488.],
+0046    2C 34 20 00 01 01                               ,4 ...
+
+Segment: .debug_loc BYTE USE32 00000000 bytes
+
+Segment: .debug_abbrev BYTE USE32 00000077 bytes
+0000                          L$19:
+0000    06 11 01 01 13 03 08 10 06 13 0F 1B 08 25 08 42 .............%.B
+0010    0F 43 06 35 10 82 41 0B 83 41 06 00 00 09 24 00 .C.5..A..A....$.
+0020    03 08 3E 0B 0B 0B 00 00 88 01 2E 01 01 13 32 0B ..>...........2.
+0030    49 13 2C 0F 46 0A 03 08 3F 0C 20 0B 36 0B 27 0C I.,.F...?. .6.'.
+0040    4C 0B 34 0C 2A 0A 11 01 12 01 33 0B 40 0A 00 00 L.4.*.....3.@...
+0050    D2 01 34 00 32 0B 3F 0C 34 0C 03 08 02 0A 49 13 ..4.2.?.4.....I.
+0060    00 00 66 0B 01 01 13 11 01 12 01 00 00 18 01 00 ..f.............
+0070    37 0F 49 13 00 00 00                            7.I....
+
+Segment: .debug_macinfo BYTE USE32 00000001 bytes
+0000                          L$20:
+0000    00                                              .
+
+Segment: .debug_str BYTE USE32 00000000 bytes
+
+Segment: .WATCOM_references BYTE USE32 00000004 bytes
+0000    00 00 00 00                                     ....
+0004                          L$21:
+
